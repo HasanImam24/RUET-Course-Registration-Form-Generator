@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasan Imam Form Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        /* PDF specific styling for Legal Size (8.5in x 14in / 215.9mm x 355.6mm) */
+        #pdf-content {
+            font-family: 'Times New Roman', Times, serif;
+            width: 215.9mm;      /* Legal width */
+            min-height: 355.6mm; /* Legal height */
+            padding: 15mm 20mm;  /* Padding adjusted for legal size */
+            margin: 0 auto;
+            background: white;
+            color: black;
+            box-sizing: border-box;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            font-size: 14.5px;
+        }
+        
+        .header-section { text-align: center; margin-bottom: 15px; line-height: 1.3; }
+        .quote { font-size: 14px; }
+        .varsity-name { font-size: 15px; text-transform: uppercase; margin-top: 2px; }
+        
+        /* Fixed Underline gap */
+        .form-title { font-size: 17px; margin-top: 4px; margin-bottom: 15px; }
+        .form-title-text {
+            border-bottom: 1.5px solid black; 
+            padding-bottom: 1px;
+        }
+        
+        /* Flexbox for dot lines */
+        .flex-row-dots { display: flex; align-items: flex-end; margin-bottom: 10px; white-space: nowrap; }
+        .dots { 
+            flex-grow: 1; 
+            border-bottom: 1.5px dotted #000; 
+            margin: 0 5px; 
+            min-height: 1em; 
+            display: flex; 
+            align-items: flex-end; 
+            justify-content: center;
+            font-weight: bold;
+            color: #1a202c;
+        }
+
+        .dept-row { display: flex; align-items: flex-end; justify-content: center; margin-bottom: 18px; }
+        .dept-dots { border-bottom: 2px dotted #000; width: 250px; margin-right: 10px; display: flex; align-items: flex-end; justify-content: center; font-weight: bold; font-size: 17px;}
+        .dept-title { font-size: 20px; font-weight: bold; }
+
+        /* Backlog Table */
+        .backlog-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .backlog-table td { border: 1px solid black; padding: 5px; }
+        .backlog-label { width: 130px; text-align: center; line-height: 1.2; }
+
+        /* Main Course Table */
+        .courses-label { margin-bottom: 8px; }
+        .course-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .course-table th, .course-table td { border: 1px solid black; padding: 6px 5px; }
+        .course-table th { font-weight: normal; text-align: center; }
+        .col-no { width: 20%; text-align: center; }
+        .col-title { width: 62%; padding-left: 10px; }
+        .col-credit { width: 18%; text-align: center; }
+        
+        .total-row td { padding: 6px 5px; }
+        .total-label { text-align: center; }
+        
+        /* Signatures & Footer */
+        .signature-area { display: flex; justify-content: space-between; margin-top: 50px; margin-bottom: 20px; padding: 0 10px; }
+        .sig-line { text-decoration: underline; }
+
+        .date-section { margin-top: 30px; width: 65%; }
+        .date-line { border-top: 1px solid black; margin-top: 25px; padding-top: 3px; font-size: 13px; }
+
+        @media print {
+            body { background: white; }
+            #ui-panel { display: none; }
+            #pdf-content { box-shadow: none; width: 100%; height: auto; padding: 0; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 flex flex-col xl:flex-row gap-6 font-sans">
+
+    <div id="ui-panel" class="w-full xl:w-1/3 bg-white p-6 rounded-lg shadow-lg h-fit max-h-screen overflow-y-auto">
+        <h2 class="text-2xl font-bold mb-5 text-gray-800 border-b pb-2">ফর্ম ইনপুট</h2>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Department</label>
+                <input type="text" id="in-dept" class="mt-1 block w-full border rounded p-2" oninput="updatePreview()">
+            </div>
+            <div class="flex gap-2">
+                <div class="flex-1">
+                    <label class="block text-sm font-semibold text-gray-700">Roll No.</label>
+                    <input type="text" id="in-roll" class="mt-1 block w-full border rounded p-2" oninput="updatePreview()">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm font-semibold text-gray-700">Registration No.</label>
+                    <input type="text" id="in-reg" class="mt-1 block w-full border rounded p-2" oninput="updatePreview()">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Name</label>
+                <input type="text" id="in-name" class="mt-1 block w-full border rounded p-2" oninput="updatePreview()">
+            </div>
+            <div class="flex gap-2">
+                <div class="w-2/3">
+                    <label class="block text-sm font-semibold text-gray-700">Academic session & Semester</label>
+                    <input type="text" id="in-session" class="mt-1 block w-full border rounded p-2" oninput="updatePreview()">
+                </div>
+                <div class="w-1/3">
+                    <label class="block text-sm font-semibold text-gray-700">Prev. Credit</label>
+                    <input type="text" id="in-prev-credit" class="mt-1 block w-full border rounded p-2" oninput="updatePreview()">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Course No. of Backlog courses</label>
+                <input type="text" id="in-backlog" class="mt-1 block w-full border rounded p-2" oninput="updatePreview()">
+            </div>
+            
+            <hr class="border-gray-300">
+            <h3 class="font-bold text-gray-800">Courses to be registered</h3>
+            
+            <div id="course-inputs" class="space-y-2"></div>
+            <button onclick="addCourseRow()" class="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm font-bold shadow-sm hover:bg-blue-200">+ Add Course</button>
+
+            <hr class="border-gray-300">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Adviser's Comment</label>
+                <input type="text" id="in-comment" class="mt-1 block w-full border rounded p-2" oninput="updatePreview()">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Date</label>
+                <input type="text" id="in-date" class="mt-1 block w-full border rounded p-2" oninput="updatePreview()">
+            </div>
+
+            <button onclick="downloadPDF()" class="w-full mt-4 bg-green-600 text-white font-bold py-3 px-4 rounded shadow hover:bg-green-700 transition">
+                ডাউনলোড পিডিএফ
+            </button>
+        </div>
+    </div>
+
+    <div class="w-full xl:w-2/3 flex justify-center overflow-x-auto pb-10">
+        <div id="pdf-content">
+            
+            <div class="header-section">
+                <div class="quote">Heaven's Light is Our Guide</div>
+                <div class="varsity-name">RAJSHAHI UNIVERSITY OF ENGINEERING & TECHNOLOGY, BANGLADESH</div>
+                <div class="form-title"><span class="form-title-text">Course Registration/Course Adjustment Form</span></div>
+            </div>
+
+            <div class="dept-row">
+                <div class="dept-dots" id="out-dept"></div>
+                <div class="dept-title">Department.</div>
+            </div>
+
+            <div class="flex-row-dots">
+                <span>Roll No</span>
+                <span class="dots" id="out-roll" style="flex-grow: 0.8;"></span>
+                <span>Registration No. with Session</span>
+                <span class="dots" id="out-reg"></span>
+            </div>
+
+            <div class="flex-row-dots">
+                <span>Name :</span>
+                <span class="dots" id="out-name"></span>
+            </div>
+
+            <div class="flex-row-dots">
+                <span>Academic session with Semester :</span>
+                <span class="dots" id="out-session"></span>
+                <span>Previously earned caredit.</span>
+                <span class="dots" id="out-prev-credit" style="flex-grow: 0.2;"></span>
+            </div>
+
+            <table class="backlog-table">
+                <tr>
+                    <td class="backlog-label">Course No. of<br>Backlog courses</td>
+                    <td id="out-backlog" style="font-weight: bold; color: #1a202c;"></td>
+                </tr>
+            </table>
+
+            <div class="courses-label">Courses to be registered in this semester :</div>
+
+            <table class="course-table">
+                <thead>
+                    <tr>
+                        <th class="col-no">Course No.</th>
+                        <th class="col-title" style="text-align: center; padding-left: 0;">Course Title</th>
+                        <th class="col-credit">Credit</th>
+                    </tr>
+                </thead>
+                <tbody id="out-course-table">
+                    </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td style="border: none;"></td>
+                        <td class="total-label" style="border: 1px solid black;">Total Credit of this Semester</td>
+                        <td id="out-total-credit" style="border: 1px solid black; text-align: center; font-weight: bold;"></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div class="flex-row-dots" style="margin-top: 15px;">
+                <span>Adviser's Comment (if any)</span>
+                <span class="dots" id="out-comment"></span>
+            </div>
+            <div class="flex-row-dots">
+                <span class="dots"></span>
+            </div>
+
+            <div class="signature-area">
+                <div class="sig-line">Signature of the Student</div>
+                <div class="sig-line">Signature of the Adviser</div>
+                <div class="sig-line">Signature of the Controller</div>
+            </div>
+
+            <div class="date-section">
+                <div>Date : <span id="out-date" style="font-weight: bold; padding-left: 10px;"></span></div>
+                <div class="date-line">Students are asked to cross out the irrelevant Terms.</div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        let courses = [];
+
+        function updatePreview() {
+            document.getElementById('out-dept').innerText = document.getElementById('in-dept').value;
+            document.getElementById('out-roll').innerText = document.getElementById('in-roll').value;
+            document.getElementById('out-name').innerText = document.getElementById('in-name').value;
+            document.getElementById('out-reg').innerText = document.getElementById('in-reg').value;
+            document.getElementById('out-session').innerText = document.getElementById('in-session').value;
+            document.getElementById('out-prev-credit').innerText = document.getElementById('in-prev-credit').value;
+            document.getElementById('out-backlog').innerText = document.getElementById('in-backlog').value;
+            document.getElementById('out-comment').innerText = document.getElementById('in-comment').value;
+            document.getElementById('out-date').innerText = document.getElementById('in-date').value;
+        }
+
+        function addCourseRow() {
+            const id = Date.now();
+            courses.push({ id, code: '', title: '', credit: '' });
+            renderCourseInputs();
+            renderCourseTable();
+        }
+
+        function removeCourseRow(id) {
+            courses = courses.filter(c => c.id !== id);
+            renderCourseInputs();
+            renderCourseTable();
+        }
+
+        function updateCourse(id, field, value) {
+            const course = courses.find(c => c.id === id);
+            if (course) {
+                course[field] = value;
+                renderCourseTable();
+            }
+        }
+
+        function renderCourseInputs() {
+            const container = document.getElementById('course-inputs');
+            container.innerHTML = '';
+            courses.forEach((course) => {
+                container.innerHTML += `
+                    <div class="flex gap-2 items-center bg-gray-50 p-2 rounded border">
+                        <input type="text" placeholder="Course No." class="w-1/4 border p-1 rounded text-sm" value="${course.code}" oninput="updateCourse(${course.id}, 'code', this.value)">
+                        <input type="text" placeholder="Title" class="flex-1 border p-1 rounded text-sm" value="${course.title}" oninput="updateCourse(${course.id}, 'title', this.value)">
+                        <input type="number" step="0.5" placeholder="Credit" class="w-1/5 border p-1 rounded text-sm" value="${course.credit}" oninput="updateCourse(${course.id}, 'credit', this.value)">
+                        <button onclick="removeCourseRow(${course.id})" class="text-red-500 font-bold px-2 hover:bg-red-100 rounded">&times;</button>
+                    </div>
+                `;
+            });
+        }
+
+        function renderCourseTable() {
+            const tbody = document.getElementById('out-course-table');
+            tbody.innerHTML = '';
+            let totalCredit = 0;
+            
+            if (courses.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td class="col-no" style="height: 30px;"></td>
+                        <td class="col-title"></td>
+                        <td class="col-credit"></td>
+                    </tr>
+                `;
+            } else {
+                courses.forEach(course => {
+                    const creditVal = parseFloat(course.credit);
+                    if(!isNaN(creditVal)) totalCredit += creditVal;
+                    
+                    tbody.innerHTML += `
+                        <tr>
+                            <td class="col-no" style="font-weight: bold; height: 30px;">${course.code}</td>
+                            <td class="col-title" style="font-weight: bold; padding-left: 10px;">${course.title}</td>
+                            <td class="col-credit" style="font-weight: bold;">${course.credit ? creditVal.toFixed(2) : ''}</td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            document.getElementById('out-total-credit').innerText = totalCredit > 0 ? totalCredit.toFixed(2) : '';
+        }
+
+        function downloadPDF() {
+            const element = document.getElementById('pdf-content');
+            const opt = {
+                margin:       0, 
+                filename:     'Course_Registration_Form_Legal.pdf',
+                image:        { type: 'jpeg', quality: 1 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'legal', orientation: 'portrait' } /* Changed format to legal */
+            };
+            
+            setTimeout(() => {
+                html2pdf().set(opt).from(element).save();
+            }, 100);
+        }
+
+        window.onload = () => {
+            updatePreview();
+            addCourseRow();
+        };
+    </script>
+</body>
+</html>
